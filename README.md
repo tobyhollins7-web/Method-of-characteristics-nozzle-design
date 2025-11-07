@@ -1,3 +1,5 @@
+This code creates a minimum-length nozzle design using the Method of Characteristics 
+
 when first run set OVERWRITE_IFT to True
 if running for the first time (where IFT.json does not exist), if one requires it to run fast, set IFT_ENTRIES to a reasonably small number, i.e. 100
 
