@@ -211,6 +211,18 @@ def extract_wall_coordinates(data):
         prev_wall_id = wid
     return d
 
+def get_previous_C_minus_index(data, expansion_fan, total_expansion_fans):
+
+    def get_complete_cminus(index):
+        indices = [int(index)]
+        for i in range(0, index - 1):
+            index += total_expansion_fans - i
+            indices.append(int(index))
+        return indices
+    cminus = get_complete_cminus(expansion_fan)
+
+    return int(cminus[-2])  # previous cminus point
+
 def handle_points(data, IFT_dict):
     # Main logic function, that runs the main iterative MoC process, calls helper functions.
     point_up_to = 0
@@ -238,8 +250,16 @@ def handle_points(data, IFT_dict):
                 data_in = update_mach_number(data_in, new_key, IFT_dict)
                 data_in = update_mu(data_in, new_key)
                 data_in = update_theta_pm_mu(data_in, new_key)
-                x, y = calculate_xy_symmetry(X_START, Y_START, CENTRE_LINE_Y, values["theta"], values["mu"],
-                                             data_in[new_key]["theta"], data_in[new_key]["mu"])
+
+                if current_col == 1:
+                    x, y = calculate_xy_symmetry(X_START, Y_START, CENTRE_LINE_Y, values["theta"], values["mu"],
+                                                 data_in[new_key]["theta"], data_in[new_key]["mu"])
+                else:
+                    pCminus = str(get_previous_C_minus_index(data_in, current_col, NUM_EXPANSION_FANS))
+                    x0, y0, theta0, mu0 = data_in[pCminus]["x"], data_in[pCminus]["y"], data_in[pCminus]["theta"], data_in[pCminus]["mu"]
+                    theta, mu = data_in[new_key]["theta"], data_in[new_key]["mu"]
+                    x, y = calculate_xy_symmetry(x0, y0, CENTRE_LINE_Y, theta0, mu0, theta, mu)
+
                 data_in[new_key]["x"] = x
                 data_in[new_key]["y"] = y
                 # print(f"data_in updated to {data_in[new_key]}")
@@ -430,7 +450,7 @@ def main():
     data = handle_corner_expansion(thetas_corner=theta_expansion_fans, data=data, IFT_dict=nu_mach_dict)
     data = handle_points(data=data, IFT_dict=nu_mach_dict)
     print_results(data)
-    plot_points(data, show=True, save_path=None)
+    plot_points(data, show=True, save_path="MoC_nozzle.png")
 
 if __name__ == "__main__":
     # prevents accidental calling of main() if called from other code (NOT IMPLEMENTED YET)
